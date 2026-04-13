@@ -1,0 +1,90 @@
+/* pages/index/index.wxss */
+page {
+  background-color: #fdf6e3;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.title-area {
+  margin-bottom: 100rpx;
+  text-align: center;
+  animation: floatUp 2s ease-in-out infinite alternate;
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-20rpx); }
+}
+
+.main-title {
+  display: block;
+  font-size: 76rpx;
+  font-weight: 900;
+  color: #ffaa00;
+  -webkit-text-stroke: 4rpx #8b4513;
+  text-shadow: 6rpx 6rpx 0px #8b4513;
+  margin-bottom: 30rpx;
+  letter-spacing: 4rpx;
+}
+
+.sub-title {
+  display: inline-block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #fff;
+  background-color: #8b4513;
+  padding: 10rpx 30rpx;
+  border-radius: 40rpx;
+  box-shadow: 0 4rpx 0 #5c2e0b;
+}
+
+/* 按钮区域 - 改成两列布局 */
+.btn-area {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 40rpx;
+  animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 基础按钮样式 */
+.btn {
+  width: 100% !important;
+  height: 100rpx;
+  line-height: 100rpx;
+  padding: 0;
+  font-size: 40rpx;
+  font-weight: bold;
+  border-radius: 50rpx;
+  border: 6rpx solid #8b4513;
+  box-shadow: 0 12rpx 0 #8b4513;
+  transition: all 0.1s;
+  color: white !important;
+}
+
+.btn:active {
+  transform: translateY(12rpx);
+  box-shadow: 0 0 0 #8b4513;
+}
+
+/* 人机对战按钮 - 紫红色 */
+.btn-ai {
+  background-color: #f5576c !important;
+}
+
+/* 双人对战按钮 - 蓝色 */
+.btn-double {
+  background-color: #4facfe !important;
+}

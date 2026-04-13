@@ -1,0 +1,113 @@
+/* pages/manual/manual.wxss */
+page {
+  background-color: #fdf6e3;
+}
+
+.manual-page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #fdf6e3;
+}
+
+/* 顶部导航栏 */
+.page-header {
+  height: 100rpx;
+  background-color: #ffd8a8;
+  border-bottom: 6rpx solid #8b4513;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  cursor: pointer;
+}
+
+.back-arrow {
+  font-size: 40rpx;
+  color: #8b4513;
+  font-weight: bold;
+}
+
+.back-text {
+  font-size: 28rpx;
+  color: #8b4513;
+  font-weight: bold;
+}
+
+.page-title {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #ff5722;
+  -webkit-text-stroke: 1.5rpx #8b4513;
+  text-shadow: 2rpx 2rpx 0 #8b4513;
+  flex: 1;
+  text-align: center;
+}
+
+.header-right {
+  width: 80rpx;
+  /* 占位符 */
+}
+
+/* 技能列表容器 */
+.skills-list {
+  flex: 1;
+  padding: 20rpx 20rpx;
+  box-sizing: border-box;
+  overflow-y: scroll;
+}
+
+/* 技能卡片 */
+.skill-card {
+  background-color: #fff;
+  border: 6rpx solid #d2a679;
+  border-radius: 20rpx;
+  padding: 25rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 8rpx 0 #eeddc5;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
+  margin-bottom: 15rpx;
+}
+
+.skill-name {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #ff5722;
+  -webkit-text-stroke: 1rpx #8b4513;
+  flex: 1;
+}
+
+.skill-cd-badge {
+  background-color: #ffebee;
+  color: #e53935;
+  padding: 6rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.skill-desc {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.8;
+  word-break: break-word;
+}
+
+.bottom-spacer {
+  height: 40rpx;
+}

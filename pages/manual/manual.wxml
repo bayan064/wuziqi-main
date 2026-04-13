@@ -1,0 +1,26 @@
+<view class="manual-page">
+  <!-- 顶部导航栏 -->
+  <view class="page-header">
+    <view class="header-left" bindtap="closeManual">
+      <text class="back-arrow">←</text>
+      <text class="back-text">返回</text>
+    </view>
+    <text class="page-title">技能说明手册</text>
+    <view class="header-right"></view>
+  </view>
+
+  <!-- 技能列表主体 -->
+  <scroll-view class="skills-list" scroll-y="true">
+    <block wx:for="{{skills}}" wx:key="id">
+      <view class="skill-card">
+        <view class="card-header">
+          <text class="skill-name">{{item.name}}</text>
+          <view class="skill-cd-badge">冷却: {{item.cd}}回合</view>
+        </view>
+        <text class="skill-desc">{{item.desc}}</text>
+      </view>
+    </block>
+    <!-- 底部间距 -->
+    <view class="bottom-spacer"></view>
+  </scroll-view>
+</view>

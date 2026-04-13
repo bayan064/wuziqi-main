@@ -1,0 +1,20 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <view class="title-area">
+    <text class="main-title">🎯 技能五子棋</text>
+    <text class="sub-title">选择模式</text>
+  </view>
+  
+  <view class="btn-area">
+    <button class="btn btn-ai" bindtap="startAIGame">
+      🤖 人机对战
+    </button>
+    
+    <button class="btn btn-double" bindtap="startDoubleGame">
+      👥 双人对战
+    </button>
+  </view>
+</view>
+
+<!-- 技能说明手册（圆形图标） -->
+<skill-manual></skill-manual>

@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/game/game",
+    "pages/manual/manual"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fdf6e3",
+    "navigationBarTitleText": "技能五子棋",
+    "navigationBarTextStyle": "black"
+  },
+  "usingComponents": {
+    "skill-manual": "/components/skill-manual/skill-manual"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

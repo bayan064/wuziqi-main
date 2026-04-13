@@ -1,0 +1,6 @@
+<view class="manual-container">
+  <!-- 悬浮图标 - 点击导航到手册 -->
+  <view class="manual-icon" bindtap="openManual">
+    <text class="icon-text">?</text>
+  </view>
+</view>

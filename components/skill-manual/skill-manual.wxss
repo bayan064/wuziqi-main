@@ -1,0 +1,30 @@
+/* 悬浮图标 */
+.manual-icon {
+  position: fixed;
+  right: 40rpx;
+  bottom: 80rpx;
+  width: 90rpx;
+  height: 90rpx;
+  background-color: #ff9800;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 6rpx solid #ffffff;
+  box-shadow: 0 8rpx 15rpx rgba(0,0,0,0.2);
+  z-index: 9998;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.manual-icon:active {
+  transform: scale(0.9) translateY(4rpx);
+  box-shadow: 0 0 0 rgba(0,0,0,0.2);
+}
+
+.icon-text {
+  color: #fff;
+  font-size: 50rpx;
+  font-weight: 900;
+  text-shadow: 2rpx 2rpx 0 #8b4513;
+}

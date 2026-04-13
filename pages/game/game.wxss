@@ -1,0 +1,166 @@
+/* pages/game/game.wxss */
+page {
+  background-color: #fdf6e3;
+}
+
+/* 初始隐藏 */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30rpx 20rpx;
+  box-sizing: border-box;
+
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* 激活后整体滑入（同步） */
+.container.active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.title {
+  font-size: 50rpx;
+  font-weight: 900;
+  color: #ff7f50;
+  -webkit-text-stroke: 2rpx #8b4513;
+  text-shadow: 4rpx 4rpx 0 #8b4513;
+  letter-spacing: 2rpx;
+}
+
+.turn-indicator {
+  margin-top: 15rpx;
+  font-size: 32rpx;
+  background-color: #fff;
+  border: 4rpx solid #8b4513;
+  padding: 8rpx 30rpx;
+  border-radius: 30rpx;
+  box-shadow: 0 6rpx 0 #ccc;
+  font-weight: bold;
+}
+
+.black-text {
+  color: #333;
+}
+
+.white-text {
+  color: #888;
+}
+
+.board-container {
+  width: 650rpx;
+  height: 650rpx;
+  background-color: #ffd8a8;
+  margin-bottom: 50rpx;
+  border: 8rpx solid #8b4513;
+  border-radius: 20rpx;
+  box-shadow: 0 12rpx 0 #d2a679;
+  overflow: hidden;
+}
+
+.board-canvas {
+  width: 100%;
+  height: 100%;
+  display: block; /* 防止canvas不同步 */
+}
+
+.skills-swiper {
+  width: 100%;
+  height: 200rpx;
+  margin-bottom: 30rpx;
+}
+
+.skills-area {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  height: 100%;
+}
+
+.skill-btn {
+  width: 180rpx;
+  height: 130rpx;
+  background-color: #fff;
+  border-radius: 20rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 4rpx solid #8b4513;
+  box-shadow: 0 8rpx 0 #bbb;
+  transition: all 0.1s;
+}
+
+.skill-btn:active {
+  transform: translateY(8rpx);
+  box-shadow: 0 0 0 #bbb;
+}
+
+.skill-btn.disabled {
+  background-color: #e0e0e0;
+  border-color: #aaa;
+  box-shadow: 0 8rpx 0 #999;
+}
+.skill-btn.disabled:active {
+  transform: none;
+  box-shadow: 0 8rpx 0 #999;
+}
+
+.skill-name {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: #ffaa00;
+  -webkit-text-stroke: 1.5rpx #8b4513;
+  margin-bottom: 8rpx;
+}
+
+.skill-status {
+  font-size: 24rpx;
+  color: #666;
+  font-weight: bold;
+}
+
+.control-area {
+  width: 100%;
+}
+
+.restart-btn {
+  width: 60% !important;
+  margin: 0 auto;
+  background-color: #ff4500 !important;
+  border: 6rpx solid #8b4513;
+  box-shadow: 0 10rpx 0 #8b4513;
+  border-radius: 50rpx;
+  transition: all 0.1s;
+}
+
+.restart-btn:active {
+  transform: translateY(10rpx);
+  box-shadow: 0 0 0 #8b4513;
+}
+
+/* 新增 wrapper 样式 */
+.board-wrapper {
+  width: 600rpx;
+  height: 600rpx;
+  position: relative;
+}
+
+.board-canvas {
+  width: 100%;
+  height: 100%;
+  background-color: #e8d5a3;
+  border-radius: 10rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.1);
+}
