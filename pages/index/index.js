@@ -12,5 +12,12 @@ Page({
     wx.navigateTo({
       url: '/pages/game/game?mode=double',
     })
+  },
+
+  // 【新增】在线对战入口
+  startOnlineGame() {
+    wx.navigateTo({
+      url: '/pages/room/room',
+    })
   }
 })

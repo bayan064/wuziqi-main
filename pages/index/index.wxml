@@ -13,6 +13,12 @@
     <button class="btn btn-double" bindtap="startDoubleGame">
       👥 双人对战
     </button>
+
+    <!-- 【新增】在线对战 -->
+    <button class="btn btn-online" bindtap="startOnlineGame">
+      🌐 在线对战
+    </button>
+
   </view>
 </view>
 

@@ -1,0 +1,45 @@
+<!-- pages/room/room.wxml -->
+<view class="container {{active ? 'active' : ''}}">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">← 返回</view>
+    <text class="title">在线对战</text>
+    <view class="placeholder"></view>
+  </view>
+
+  <!-- 主要内容 -->
+  <view class="content">
+    <!-- 创建房间卡片 -->
+    <view class="card create-card" bindtap="createRoom">
+      <view class="card-icon">🏠</view>
+      <view class="card-title">创建房间</view>
+      <view class="card-desc">创建一个新房间，邀请好友加入</view>
+    </view>
+
+    <!-- 加入房间卡片 -->
+    <view class="card join-card">
+      <view class="card-icon">🔑</view>
+      <view class="card-title">加入房间</view>
+      <view class="card-desc">输入房间号，加入好友的对战</view>
+      
+      <input 
+        class="room-input" 
+        type="number" 
+        maxlength="6"
+        placeholder="请输入6位房间号"
+        value="{{inputRoomId}}"
+        bindinput="onRoomIdInput"
+      />
+      
+      <button class="join-btn" bindtap="joinRoom">加入</button>
+    </view>
+
+    <!-- 随机匹配卡片 -->
+    <view class="card random-card" bindtap="randomMatch">
+      <view class="card-icon">🎲</view>
+      <view class="card-title">随机匹配</view>
+      <view class="card-desc">系统自动分配对手（开发中）</view>
+      <view class="badge">即将开放</view>
+    </view>
+  </view>
+</view>

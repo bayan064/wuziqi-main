@@ -2,7 +2,8 @@
   "pages": [
     "pages/index/index",
     "pages/game/game",
-    "pages/manual/manual"
+    "pages/manual/manual",
+    "pages/room/room"  
   ],
   "window": {
     "backgroundTextStyle": "light",
