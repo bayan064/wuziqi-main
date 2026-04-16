@@ -18,7 +18,18 @@ Page({
     animatingMove: null ,
     // ✅ 新增：控制动画同步
     ready: false,
-    gameMode: 'ai'  // 【新增】'ai' 或 'double'
+    gameMode: 'ai',  // 【新增】'ai' 或 'double'
+    moveCount: 0,
+    gameStartTime: 0,
+    settlementVisible: false,
+    settlementType: 'victory',
+    settlementTitleEn: '',
+    settlementTitleCn: '',
+    settlementMessage: '',
+    settlementThirdLabel: '',
+    settlementThirdValue: '',
+    settlementDurationText: '0秒',
+    settlementRoundText: '0回合'
   },
 
    onLoad(options) {
@@ -61,7 +72,11 @@ Page({
       skillPages: skillPages,
       lastAIMove: null,
       animatingMove: null,
-      pendingSkill: null
+      pendingSkill: null,
+      moveCount: 0,
+      gameStartTime: Date.now(),
+      settlementVisible: false,
+      settlementRoundText: '0回合'
     });
 
     if (this._ctx) {
@@ -176,6 +191,8 @@ handleBoardClick(e) {
     }
 
     board[row][col] = player;
+    const nextMoveCount = this.data.moveCount + 1;
+    this.setData({ moveCount: nextMoveCount });
 
     // ✅ AI 落子 → 启动动画
     if (player === 2) {
@@ -395,19 +412,118 @@ animatePiece() {
 
   // === 结束 / 重开 ===
   handleWin(winner) {
-    this.setData({ isGameOver: true });
-    wx.showModal({
-      title: '游戏结束',
-      content: winner === 1 
-        ? '黑棋 (玩家) 赢了！' 
-        : '白棋 (电脑) 赢了！',
-      confirmText: '重新开始',
-      showCancel: false,
-      success: (res) => {
-        if (res.confirm) {
-          this.initGame();
-        }
-      }
+    const settlementData = this.buildSettlementData(winner);
+    this.setData({
+      isGameOver: true,
+      settlementVisible: true,
+      ...settlementData
+    });
+  },
+
+  buildSettlementData(winner) {
+    const elapsedSec = Math.max(1, Math.floor((Date.now() - this.data.gameStartTime) / 1000));
+    const durationText = this.formatDuration(elapsedSec);
+    const roundCount = Math.max(1, Math.ceil(this.data.moveCount / 2));
+    const roundText = `${roundCount}回合`;
+    const isAIMode = this.data.gameMode === 'ai';
+    const aiRating = this.getBattleRating(roundCount, elapsedSec);
+
+    if (isAIMode) {
+      const victory = winner === 1;
+      const aiVictoryLines = [
+        '恭喜，五子棋大师！继续保持！',
+        '这波布局很稳，AI被你拿捏了！',
+        '攻守节奏完美，漂亮拿下这一局！',
+        '关键一手封杀全局，赢得干脆利落！',
+        '你今天手感火热，胜利实至名归！'
+      ];
+      const aiDefeatLines = [
+        '别灰心，下一局一定行！',
+        '这局差一点点，下一盘就能翻盘！',
+        '一子之失，来日可追。',
+        'AI抓住了破绽，再来一局复仇！',
+        '思路已经对了，下一把就会更顺！'
+      ];
+      return {
+        settlementType: victory ? 'victory' : 'defeat',
+        settlementTitleEn: victory ? 'VICTORY!' : 'DEFEAT...',
+        settlementTitleCn: victory ? '你赢了！' : '你输了。',
+        settlementMessage: this.getRandomLine(victory ? aiVictoryLines : aiDefeatLines),
+        settlementThirdLabel: victory ? '评价' : '对手',
+        settlementThirdValue: victory ? aiRating : '阿尔法喵 (AI)',
+        settlementDurationText: durationText,
+        settlementRoundText: roundText
+      };
+    }
+
+    const doubleBlackWinLines = [
+      '黑棋操作行云流水！',
+      '黑棋节奏掌控到位，拿下胜局！',
+      '黑棋中盘发力，压制到底！',
+      '黑棋攻防兼备，这局赢得漂亮！',
+      '黑棋关键点位精准，实至名归！'
+    ];
+    const doubleWhiteWinLines = [
+      '白棋反击漂亮，拿下胜局！',
+      '白棋布局细腻，后程发力制胜！',
+      '白棋抓住机会，一波终结比赛！',
+      '白棋稳扎稳打，赢得干净利落！',
+      '白棋关键连线形成，漂亮获胜！'
+    ];
+
+    return {
+      settlementType: winner === 1 ? 'victory' : 'defeat',
+      settlementTitleEn: winner === 1 ? 'BLACK WIN!' : 'WHITE WIN!',
+      settlementTitleCn: winner === 1 ? '黑棋获胜！' : '白棋获胜！',
+      settlementMessage: this.getRandomLine(winner === 1 ? doubleBlackWinLines : doubleWhiteWinLines),
+      settlementThirdLabel: '模式',
+      settlementThirdValue: '双人对战',
+      settlementDurationText: durationText,
+      settlementRoundText: roundText
+    };
+  },
+
+  getRandomLine(lines) {
+    if (!Array.isArray(lines) || lines.length === 0) {
+      return '';
+    }
+    const randomIndex = Math.floor(Math.random() * lines.length);
+    return lines[randomIndex];
+  },
+
+  getBattleRating(roundCount, elapsedSec) {
+    if (roundCount <= 8 || elapsedSec <= 60) {
+      return this.getRandomLine(['神之一手', '雷霆制胜', '出神入化', '势如破竹', '算无遗策']);
+    }
+    if (roundCount <= 14 || elapsedSec <= 150) {
+      return this.getRandomLine(['棋风凌厉', '攻守兼备', '节奏大师', '落子精准', '稳中带狠']);
+    }
+    if (roundCount <= 22 || elapsedSec <= 300) {
+      return this.getRandomLine(['稳扎稳打', '厚积薄发', '后劲十足', '越战越勇', '大局观强']);
+    }
+    return this.getRandomLine(['鏖战王者', '韧性拉满', '耐心超群', '逆风翻盘', '终局大师']);
+  },
+
+  formatDuration(totalSec) {
+    const minutes = Math.floor(totalSec / 60);
+    const seconds = totalSec % 60;
+    if (minutes > 0) {
+      return `${minutes}分${seconds}秒`;
+    }
+    return `${seconds}秒`;
+  },
+
+  handleSettlementRestart() {
+    this._ctx = null;
+    this.initGame();
+    setTimeout(() => {
+      this.initCanvas();
+    }, 30);
+  },
+
+  handleBackToMenu() {
+    wx.reLaunch({
+      url: '/pages/index/index'
     });
   },
 
