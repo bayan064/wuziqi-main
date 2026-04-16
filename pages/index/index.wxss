@@ -88,8 +88,8 @@ page {
 .btn-double {
   background-color: #4facfe !important;
 }
-  /* 【新增】在线对战按钮颜色 */
-.btn-online {
+  /* 个人中心按钮 */
+.btn-profile {
   background-color: #6c5ce7 !important;
 
 }

@@ -14,9 +14,9 @@
       👥 双人对战
     </button>
 
-    <!-- 【新增】在线对战 -->
-    <button class="btn btn-online" bindtap="startOnlineGame">
-      🌐 在线对战
+    <!-- 【新增】个人中心 -->
+    <button class="btn btn-profile" bindtap="openProfileCenter">
+      👤 个人中心
     </button>
 
   </view>

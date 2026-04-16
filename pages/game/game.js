@@ -6,6 +6,8 @@ const ruleConfig = require('../../utils/rule.js')
 const skillConfig = require('../../utils/skill.js')
 const aiConfig = require('../../utils/ai.js')
 
+const BATTLE_RECORDS_KEY = 'battleRecords'
+
 Page({
   data: {
     board: [],
@@ -697,11 +699,39 @@ animatePiece() {
   // === 结束 / 重开 ===
   handleWin(winner) {
     const settlementData = this.buildSettlementData(winner);
+    this.saveBattleRecord(winner);
     this.setData({
       isGameOver: true,
       settlementVisible: true,
       ...settlementData
     });
+  },
+
+  saveBattleRecord(winner) {
+    const now = new Date();
+    const elapsedSec = Math.max(1, Math.floor((Date.now() - this.data.gameStartTime) / 1000));
+    const roundCount = Math.max(1, Math.ceil(this.data.moveCount / 2));
+    const isAIMode = this.data.gameMode === 'ai';
+
+    let result = '失败';
+    if (isAIMode) {
+      result = winner === 1 ? '胜利' : '失败';
+    } else {
+      // 双人模式默认从黑棋玩家视角统计战绩
+      result = winner === 1 ? '胜利' : '失败';
+    }
+
+    const record = {
+      modeText: isAIMode ? '人机对战' : '双人对战',
+      result,
+      durationText: this.formatDuration(elapsedSec),
+      roundText: `${roundCount}回合`,
+      timeText: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    };
+
+    const history = wx.getStorageSync(BATTLE_RECORDS_KEY) || [];
+    history.unshift(record);
+    wx.setStorageSync(BATTLE_RECORDS_KEY, history.slice(0, 30));
   },
 
   buildSettlementData(winner) {

@@ -1,45 +1,67 @@
 <!-- pages/room/room.wxml -->
 <view class="container {{active ? 'active' : ''}}">
-  <!-- 头部 -->
   <view class="header">
     <view class="back-btn" bindtap="goBack">← 返回</view>
-    <text class="title">在线对战</text>
+    <text class="title">个人中心</text>
     <view class="placeholder"></view>
   </view>
 
-  <!-- 主要内容 -->
-  <view class="content">
-    <!-- 创建房间卡片 -->
-    <view class="card create-card" bindtap="createRoom">
-      <view class="card-icon">🏠</view>
-      <view class="card-title">创建房间</view>
-      <view class="card-desc">创建一个新房间，邀请好友加入</view>
-    </view>
+  <view class="profile-card">
+    <button class="avatar-btn" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+      <image wx:if="{{avatarUrl}}" class="avatar" src="{{avatarUrl}}" mode="aspectFill"></image>
+      <view wx:else class="avatar placeholder-avatar">+</view>
+    </button>
+    <text class="avatar-tip">点击头像可更换</text>
 
-    <!-- 加入房间卡片 -->
-    <view class="card join-card">
-      <view class="card-icon">🔑</view>
-      <view class="card-title">加入房间</view>
-      <view class="card-desc">输入房间号，加入好友的对战</view>
-      
-      <input 
-        class="room-input" 
-        type="number" 
-        maxlength="6"
-        placeholder="请输入6位房间号"
-        value="{{inputRoomId}}"
-        bindinput="onRoomIdInput"
+    <view class="nickname-row">
+      <input
+        class="nickname-input"
+        type="nickname"
+        placeholder="请输入昵称"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
       />
-      
-      <button class="join-btn" bindtap="joinRoom">加入</button>
+      <button class="save-btn" bindtap="saveNickname">保存</button>
+    </view>
+  </view>
+
+  <view class="stats-card">
+    <view class="stat-item">
+      <text class="stat-value">{{totalGames}}</text>
+      <text class="stat-label">总对局</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{winGames}}</text>
+      <text class="stat-label">胜局</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{winRateText}}</text>
+      <text class="stat-label">胜率</text>
+    </view>
+  </view>
+
+  <view class="record-card">
+    <view class="record-header">
+      <text class="record-title">对局记录</text>
+      <button class="clear-btn" bindtap="clearRecords" size="mini">清空</button>
     </view>
 
-    <!-- 随机匹配卡片 -->
-    <view class="card random-card" bindtap="randomMatch">
-      <view class="card-icon">🎲</view>
-      <view class="card-title">随机匹配</view>
-      <view class="card-desc">系统自动分配对手（开发中）</view>
-      <view class="badge">即将开放</view>
-    </view>
+    <view wx:if="{{recordList.length === 0}}" class="empty-record">暂无对局记录，开始一局吧</view>
+
+    <scroll-view wx:else class="record-list" scroll-y="true">
+      <block wx:for="{{recordList}}" wx:key="index">
+        <view class="record-item">
+          <view class="record-top">
+            <text class="record-mode">{{item.modeText}}</text>
+            <text class="record-result {{item.result === '胜利' ? 'win' : 'lose'}}">{{item.result}}</text>
+          </view>
+          <view class="record-bottom">
+            <text>回合：{{item.roundText}}</text>
+            <text>用时：{{item.durationText}}</text>
+            <text>{{item.timeText}}</text>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
   </view>
 </view>
