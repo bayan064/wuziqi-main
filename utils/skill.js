@@ -3,14 +3,14 @@
 
 const getAllSkills = () => {
     return [
-        { id: 1, name: '飞沙走石', maxCooldown: 3, cooldown: 0 },
-        { id: 2, name: '拾金不昧', maxCooldown: 5, cooldown: 0 },
-        { id: 3, name: '保洁上门', maxCooldown: 7, cooldown: 0 },
-        { id: 4, name: '擒拿擒拿', maxCooldown: 8, cooldown: 0 },
-        { id: 5, name: '静如止水', maxCooldown: 10, cooldown: 0 },
-        { id: 6, name: '时光倒流', maxCooldown: 12, cooldown: 0 },
-        { id: 7, name: '两级反转', maxCooldown: 999, cooldown: 0 },
-        { id: 8, name: '力拔山兮', maxCooldown: 999, cooldown: 0 }
+        { id: 1, name: '飞沙走石', maxCooldown: 3, cooldown: 0, usedUp: false },
+        { id: 2, name: '拾金不昧', maxCooldown: 5, cooldown: 0, usedUp: false },
+        { id: 3, name: '保洁上门', maxCooldown: 7, cooldown: 0, usedUp: false },
+        { id: 4, name: '擒拿擒拿', maxCooldown: 8, cooldown: 0, usedUp: false },
+        { id: 5, name: '静如止水', maxCooldown: 10, cooldown: 0, usedUp: false },
+        { id: 6, name: '时光倒流', maxCooldown: 12, cooldown: 0, usedUp: false },
+        { id: 7, name: '两级反转', maxCooldown: 999, cooldown: 0, usedUp: false },
+        { id: 8, name: '力拔山兮', maxCooldown: 999, cooldown: 0, usedUp: false }
     ];
 };
 
@@ -51,8 +51,7 @@ const useSkill = (skillId, board, player, extraContext = {}) => {
             let oppPlayer = player === 1 ? 2 : 1;
             // 【保护判断】在使用前先检查对手是否套了盾，如果有可以直接抵消不用选人了
             if (extraContext.playerEffects && extraContext.playerEffects[oppPlayer] && extraContext.playerEffects[oppPlayer].protect > 0) {
-                success = true;
-                return { success, newBoard, msg: '对方被擒拿护盾保护，飞沙走石无效！' };
+                return { success: false, newBoard, msg: '对方擒拿护盾生效，无法使用飞沙走石' };
             }
 
             if (!extraContext.target) {
@@ -111,8 +110,7 @@ const useSkill = (skillId, board, player, extraContext = {}) => {
             
             // 【保护判断】如果对手处于擒拿护盾状态
             if (extraContext.playerEffects && extraContext.playerEffects[opponent] && extraContext.playerEffects[opponent].protect > 0) {
-                success = true; // 技能已施放，但是被抵消了
-                return { success, newBoard, msg: '对方被擒拿护盾保护，保洁上门无效！' };
+                return { success: false, newBoard, msg: '对方擒拿护盾生效，无法使用保洁上门' };
             }
 
             let opponentPieces = [];
@@ -146,16 +144,17 @@ const useSkill = (skillId, board, player, extraContext = {}) => {
             let targetSilence = player === 1 ? 2 : 1;
             return { success, newBoard, applyEffect: { target: targetSilence, effect: 'silence', duration: 1 } };
 
-        case 6: // 时光倒流：让时间回到上一回合，且不恢复技能CD
-            // 判断是否至少走过了1回合(即至少落过1次子保存了快照)
-            if (newHistory && newHistory.length > 0) {
-                // 退回到玩家自己上次落子前的状态
-                const previousBoard = newHistory.pop();
-                newBoard = JSON.parse(JSON.stringify(previousBoard));
+        case 6: // 时光倒流：双方各撤回一步，施法方重新落子
+            // 至少需要有两步历史，才能做到双方各撤回一步
+            if (newHistory && newHistory.length >= 2) {
+                // 第一次pop：撤回对手上一步；第二次pop：撤回自己上一步
+                newHistory.pop();
+                const rewindBoard = newHistory.pop();
+                newBoard = JSON.parse(JSON.stringify(rewindBoard));
                 success = true;
-                skipTurn = true; // 时光倒流后应该是自己重新落子，不把回合让给对手
+                skipTurn = true; // 该技能是例外：使用后保留当前回合以重新落子
             } else {
-                wx.showToast({ title: '第一回合无法时光倒流', icon: 'none' });
+                return { success: false, msg: '当前局面不足以时光倒流' };
             }
             break;
             

@@ -15,7 +15,7 @@
       <view class="skill-card">
         <view class="card-header">
           <text class="skill-name">{{item.name}}</text>
-          <view class="skill-cd-badge">冷却: {{item.cd}}回合</view>
+          <view class="skill-cd-badge">{{item.oncePerMatch ? '每局限用一次' : ('冷却: ' + item.cd + '回合')}}</view>
         </view>
         <text class="skill-desc">{{item.desc}}</text>
       </view>

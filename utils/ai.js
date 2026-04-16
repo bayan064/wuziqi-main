@@ -1,49 +1,225 @@
 // utils/ai.js
-// 智能 AI：会堵玩家 + 自己进攻
+// 智能 AI：先求自胜，再做必防，最后通过一层前瞻规划进攻
+
+const BOARD_SIZE = 15;
+const AI_PLAYER = 2;
+const HUMAN_PLAYER = 1;
 
 /**
  * 电脑的回合落子算法
  * @param {Array} board 当前 15x15 棋盘
- * @returns {row: Number, col: Number} 落子坐标
+ * @returns {{row: Number, col: Number} | null} 落子坐标
  */
 const getAIMove = (board) => {
-  // 收集所有空位
-  let emptySpots = [];
-  for (let r = 0; r < 15; r++) {
-    for (let c = 0; c < 15; c++) {
-      if (board[r][c] === 0) {
-        emptySpots.push({ row: r, col: c });
+  const candidates = getCandidateMoves(board);
+  if (candidates.length === 0) return null;
+
+  // 第一步：有直接赢棋点就立即结束比赛
+  const aiWinningMoves = findWinningMoves(board, AI_PLAYER, candidates);
+  if (aiWinningMoves.length > 0) {
+    return chooseBestByLocalScore(board, aiWinningMoves);
+  }
+
+  // 第二步：有玩家直接赢棋点就优先堵住
+  const humanWinningMoves = findWinningMoves(board, HUMAN_PLAYER, candidates);
+  if (humanWinningMoves.length > 0) {
+    return chooseBestByLocalScore(board, humanWinningMoves);
+  }
+
+  // 第三步：基础评分 + 一层前瞻（避免送对手必胜手）
+  const quickRanked = candidates
+    .map((move) => ({ move, score: getQuickScore(board, move) }))
+    .sort((a, b) => b.score - a.score);
+
+  // 只对前若干候选做深一点的评估，兼顾速度与质量
+  const topCandidates = quickRanked.slice(0, 18);
+  let best = topCandidates[0];
+
+  for (let i = 0; i < topCandidates.length; i++) {
+    const move = topCandidates[i].move;
+    const deepScore = getLookaheadScore(board, move);
+    if (deepScore > best.score) {
+      best = { move, score: deepScore };
+    }
+  }
+
+  return best.move;
+};
+
+function getLookaheadScore(board, move) {
+  const simulated = cloneBoard(board);
+  simulated[move.row][move.col] = AI_PLAYER;
+
+  // 理论兜底：若该点已成五连，直接拉满
+  if (isWinningMove(simulated, move.row, move.col, AI_PLAYER)) {
+    return 1e9;
+  }
+
+  const oppCandidates = getCandidateMoves(simulated);
+  const oppWinningMoves = findWinningMoves(simulated, HUMAN_PLAYER, oppCandidates);
+  const aiNextWinningMoves = findWinningMoves(simulated, AI_PLAYER, oppCandidates);
+
+  let score = getQuickScore(board, move);
+
+  // 下完后若给了对手直接赢点，强烈惩罚
+  if (oppWinningMoves.length > 0) {
+    score -= 250000 + oppWinningMoves.length * 12000;
+  }
+
+  // 若形成下回合多杀点，强烈加分
+  if (aiNextWinningMoves.length > 0) {
+    score += 120000 + aiNextWinningMoves.length * 10000;
+  }
+
+  return score;
+}
+
+function getQuickScore(board, move) {
+  const { row, col } = move;
+  let score = 0;
+
+  // 进攻权重略高于防守，避免只会堵不会赢
+  score += evaluatePosition(board, row, col, AI_PLAYER) * 1.25;
+  score += evaluatePosition(board, row, col, HUMAN_PLAYER) * 1.05;
+
+  // 中心偏好
+  const center = 7;
+  const distanceToCenter = Math.abs(row - center) + Math.abs(col - center);
+  score += (28 - distanceToCenter) * 0.45;
+
+  // 邻近已有棋子更优，避免落到无关远点
+  score += getNeighborhoodBonus(board, row, col);
+
+  return score;
+}
+
+function getNeighborhoodBonus(board, row, col) {
+  let bonus = 0;
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = row + dr;
+      const nc = col + dc;
+      if (!inBounds(nr, nc)) continue;
+      if (board[nr][nc] === AI_PLAYER) bonus += 18;
+      else if (board[nr][nc] === HUMAN_PLAYER) bonus += 12;
+    }
+  }
+  return bonus;
+}
+
+function chooseBestByLocalScore(board, moves) {
+  let bestMove = moves[0];
+  let bestScore = -Infinity;
+  for (let i = 0; i < moves.length; i++) {
+    const score = getQuickScore(board, moves[i]);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMove = moves[i];
+    }
+  }
+  return bestMove;
+}
+
+function findWinningMoves(board, player, moves) {
+  const result = [];
+  for (let i = 0; i < moves.length; i++) {
+    const { row, col } = moves[i];
+    const simulated = cloneBoard(board);
+    simulated[row][col] = player;
+    if (isWinningMove(simulated, row, col, player)) {
+      result.push({ row, col });
+    }
+  }
+  return result;
+}
+
+function getCandidateMoves(board) {
+  const occupied = getOccupiedCount(board);
+  if (occupied === 0) return [{ row: 7, col: 7 }];
+
+  const result = [];
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (board[r][c] !== 0) continue;
+      if (hasNearbyStone(board, r, c, 2)) {
+        result.push({ row: r, col: c });
       }
     }
   }
 
-  if (emptySpots.length === 0) return null;
-
-  // 给每个空位打分
-  let bestScore = -1;
-  let bestMove = emptySpots[0];
-
-  for (let spot of emptySpots) {
-    let score = 0;
-    
-    // 进攻分：AI 自己（白棋=2）下在这里的分数
-    score += evaluatePosition(board, spot.row, spot.col, 2) * 1.0;
-    
-    // 防守分：堵玩家（黑棋=1）下在这里的分数，防守权重更高
-    score += evaluatePosition(board, spot.row, spot.col, 1) * 1.2;
-    
-    // 中心偏好：让 AI 更倾向于占中心
-    const center = 7;
-    const distanceToCenter = Math.abs(spot.row - center) + Math.abs(spot.col - center);
-    score += (28 - distanceToCenter) * 0.5;
-    
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = spot;
+  // 极端情况下兜底
+  if (result.length === 0) {
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (board[r][c] === 0) result.push({ row: r, col: c });
+      }
     }
   }
+  return result;
+}
 
-  return bestMove;
+function getOccupiedCount(board) {
+  let count = 0;
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (board[r][c] !== 0) count++;
+    }
+  }
+  return count;
+}
+
+function hasNearbyStone(board, row, col, radius) {
+  for (let dr = -radius; dr <= radius; dr++) {
+    for (let dc = -radius; dc <= radius; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = row + dr;
+      const nc = col + dc;
+      if (!inBounds(nr, nc)) continue;
+      if (board[nr][nc] !== 0) return true;
+    }
+  }
+  return false;
+}
+
+function isWinningMove(board, row, col, player) {
+  const directions = [
+    [1, 0],
+    [0, 1],
+    [1, 1],
+    [1, -1]
+  ];
+
+  for (let i = 0; i < directions.length; i++) {
+    const [dx, dy] = directions[i];
+    let count = 1;
+
+    for (let step = 1; step <= 4; step++) {
+      const nr = row + dx * step;
+      const nc = col + dy * step;
+      if (!inBounds(nr, nc) || board[nr][nc] !== player) break;
+      count++;
+    }
+
+    for (let step = 1; step <= 4; step++) {
+      const nr = row - dx * step;
+      const nc = col - dy * step;
+      if (!inBounds(nr, nc) || board[nr][nc] !== player) break;
+      count++;
+    }
+
+    if (count >= 5) return true;
+  }
+
+  return false;
+}
+
+function inBounds(row, col) {
+  return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
+}
+
+function cloneBoard(board) {
+  return board.map((line) => line.slice());
 }
 
 /**
@@ -56,19 +232,19 @@ const getAIMove = (board) => {
  */
 function evaluatePosition(board, row, col, player) {
   let totalScore = 0;
-  
-  // 四个方向：水平、垂直、主对角线、次对角线
+
   const directions = [
-    [1, 0],   // 水平
-    [0, 1],   // 垂直
-    [1, 1],   // 主对角线
-    [1, -1]   // 次对角线
+    [1, 0],
+    [0, 1],
+    [1, 1],
+    [1, -1]
   ];
-  
-  for (let [dx, dy] of directions) {
+
+  for (let i = 0; i < directions.length; i++) {
+    const [dx, dy] = directions[i];
     totalScore += evaluateDirection(board, row, col, dx, dy, player);
   }
-  
+
   return totalScore;
 }
 
@@ -76,15 +252,14 @@ function evaluatePosition(board, row, col, player) {
  * 评估单个方向上的分数
  */
 function evaluateDirection(board, row, col, dx, dy, player) {
-  let count = 1;  // 当前棋子
+  let count = 1;
   let openLeft = 0;
   let openRight = 0;
-  
-  // 正方向延伸
+
   for (let step = 1; step <= 5; step++) {
     const newRow = row + dx * step;
     const newCol = col + dy * step;
-    if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+    if (!inBounds(newRow, newCol)) break;
     if (board[newRow][newCol] === player) {
       count++;
     } else if (board[newRow][newCol] === 0) {
@@ -94,12 +269,11 @@ function evaluateDirection(board, row, col, dx, dy, player) {
       break;
     }
   }
-  
-  // 负方向延伸
+
   for (let step = 1; step <= 5; step++) {
     const newRow = row - dx * step;
     const newCol = col - dy * step;
-    if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+    if (!inBounds(newRow, newCol)) break;
     if (board[newRow][newCol] === player) {
       count++;
     } else if (board[newRow][newCol] === 0) {
@@ -109,28 +283,27 @@ function evaluateDirection(board, row, col, dx, dy, player) {
       break;
     }
   }
-  
-  // 根据连子数量返回分数
+
   const totalOpen = openLeft + openRight;
-  
-  if (count >= 5) return 100000;  // 直接获胜
+
+  if (count >= 5) return 100000;
   if (count === 4) {
-    if (totalOpen >= 1) return 30000;  // 活四
-    return 1000;  // 死四
+    if (totalOpen >= 2) return 50000;
+    if (totalOpen >= 1) return 22000;
+    return 1200;
   }
   if (count === 3) {
-    if (totalOpen >= 2) return 5000;   // 活三
-    if (totalOpen >= 1) return 200;    // 死三
+    if (totalOpen >= 2) return 7000;
+    if (totalOpen >= 1) return 500;
   }
   if (count === 2) {
-    if (totalOpen >= 2) return 400;    // 活二
-    if (totalOpen >= 1) return 20;     // 死二
+    if (totalOpen >= 2) return 700;
+    if (totalOpen >= 1) return 45;
   }
-  if (count === 1) return 5;
-  
-  return 0;
+
+  return 6;
 }
 
 module.exports = {
   getAIMove
-}
+};

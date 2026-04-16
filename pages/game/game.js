@@ -31,7 +31,10 @@ Page({
     settlementThirdLabel: '',
     settlementThirdValue: '',
     settlementDurationText: '0秒',
-    settlementRoundText: '0回合'
+    settlementRoundText: '0回合',
+    aiSkillEnabled: true,
+    showSkillHistoryPanel: false,
+    skillHistory: []
   },
 
    onLoad(options) {
@@ -55,6 +58,11 @@ Page({
       1: { silence: 0, protect: 0 },
       2: { silence: 0, protect: 0 }
     };
+    this.aiCoachSkillUsage = {};
+    this.aiCoachLastSkillId = null;
+    this.aiCoachLastSkillRound = -99;
+    this.playerSkillUseCount = 0;
+    this.turnSkillUsed = false;
 
     // 1. 获取一个空的 15x15 棋盘 (调用外部模块)
     const newBoard = ruleConfig.resetGame ? ruleConfig.resetGame() : this._createEmptyBoard();
@@ -86,7 +94,9 @@ Page({
       moveCount: 0,
       gameStartTime: Date.now(),
       settlementVisible: false,
-      settlementRoundText: '0回合'
+      settlementRoundText: '0回合',
+      showSkillHistoryPanel: false,
+      skillHistory: []
     });
 
     if (this._ctx) {
@@ -203,11 +213,9 @@ handleBoardClick(e) {
 
     const player = this.data.currentPlayer;
 
-    // 如果是玩家(黑)落子，在真正改变棋盘前记录当前快照（用于时光倒流）
-    if (player === 1) {
-        if (!this.boardHistory) this.boardHistory = [];
-        this.boardHistory.push(JSON.parse(JSON.stringify(board)));
-    }
+    // 在任意玩家落子前记录快照（用于时光倒流）
+    if (!this.boardHistory) this.boardHistory = [];
+    this.boardHistory.push(JSON.parse(JSON.stringify(board)));
 
     board[row][col] = player;
     const nextMoveCount = this.data.moveCount + 1;
@@ -255,9 +263,7 @@ handleBoardClick(e) {
       return;
     }
 
-    if (player === 1 || this.data.gameMode === 'double') {
-      this.updateSkillCooldowns(player);
-    }
+    this.updateSkillCooldowns(player);
 
     // 更新特效倒计时（减少自身身上挂着的所有buff/debuff的时间）
     if(this.playerEffects && this.playerEffects[player]) {
@@ -275,6 +281,7 @@ handleBoardClick(e) {
     currentPlayer: nextPlayer,
     skillPages: this.getSkillPagesByPlayer(nextPlayer)
   });
+  this.turnSkillUsed = false;
 
 // 【修改】人机模式且轮到AI时，才调用AI落子
 if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
@@ -287,18 +294,208 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
 
 
   processAITurn() {
-    if(aiConfig.getAIMove) {
-        let aiMove = aiConfig.getAIMove(this.data.board);
-        if(aiMove) {
-            this.processMove(aiMove.row, aiMove.col);
+    if (this.data.isGameOver || this.data.gameMode !== 'ai' || this.data.currentPlayer !== 2) return;
+
+    if (this.data.aiSkillEnabled) {
+      const usedSkill = this.tryUseAISkill();
+      if (usedSkill) {
+        // 默认技能与落子二选一；时光倒流为例外，AI保留回合后要补一手落子
+        if (!this.data.isGameOver && this.data.currentPlayer === 2) {
+          setTimeout(() => {
+            if (this.data.isGameOver || this.data.currentPlayer !== 2) return;
+            if (aiConfig.getAIMove) {
+              const aiMove = aiConfig.getAIMove(this.data.board);
+              if (aiMove) {
+                this.processMove(aiMove.row, aiMove.col);
+              }
+            }
+          }, 420);
         }
+        return;
+      }
     }
+
+    if (aiConfig.getAIMove) {
+      let aiMove = aiConfig.getAIMove(this.data.board);
+      if (aiMove) {
+        this.processMove(aiMove.row, aiMove.col);
+      }
+    }
+  },
+
+  getFlattenSkillListByPlayer(player) {
+    const skillPages = this.getSkillPagesByPlayer(player) || [];
+    const result = [];
+    let index = 0;
+
+    for (let p = 0; p < skillPages.length; p++) {
+      for (let s = 0; s < skillPages[p].length; s++) {
+        result.push({ index, skill: skillPages[p][s] });
+        index++;
+      }
+    }
+
+    return result;
+  },
+
+  getPiecesByPlayer(player) {
+    const pieces = [];
+    const board = this.data.board;
+    for (let r = 0; r < 15; r++) {
+      for (let c = 0; c < 15; c++) {
+        if (board[r][c] === player) {
+          pieces.push({ row: r, col: c });
+        }
+      }
+    }
+    return pieces;
+  },
+
+  getPieceCountByPlayer(player) {
+    return this.getPiecesByPlayer(player).length;
+  },
+
+  pickAIThrowTarget(opponentPieces) {
+    if (!opponentPieces || opponentPieces.length === 0) return null;
+
+    const lastBlackMove = this.data.lastBlackMove;
+    if (lastBlackMove && this.data.board[lastBlackMove.row][lastBlackMove.col] === 1) {
+      return { row: lastBlackMove.row, col: lastBlackMove.col };
+    }
+
+    const randomIndex = Math.floor(Math.random() * opponentPieces.length);
+    return opponentPieces[randomIndex];
+  },
+
+  pickByWeight(candidates) {
+    const totalWeight = candidates.reduce((sum, item) => sum + item.weight, 0);
+    let random = Math.random() * totalWeight;
+    for (let i = 0; i < candidates.length; i++) {
+      random -= candidates[i].weight;
+      if (random <= 0) {
+        return candidates[i];
+      }
+    }
+    return candidates[candidates.length - 1];
+  },
+
+  tryUseAISkill() {
+    if (this.turnSkillUsed) {
+      return false;
+    }
+
+    if (this.playerEffects && this.playerEffects[2] && this.playerEffects[2].silence > 0) {
+      return false;
+    }
+
+    const opponentPieces = this.getPiecesByPlayer(1);
+    const opponentProtected = !!(this.playerEffects && this.playerEffects[1] && this.playerEffects[1].protect > 0);
+    const aiPieceCount = this.getPieceCountByPlayer(2);
+    const playerPieceCount = this.getPieceCountByPlayer(1);
+    const mySkills = this.getFlattenSkillListByPlayer(2).filter((item) => item.skill.cooldown === 0 && !item.skill.usedUp);
+    if (mySkills.length === 0) return false;
+
+    const currentRound = Math.max(1, Math.ceil(this.data.moveCount / 2));
+    const leadGap = aiPieceCount - playerPieceCount;
+
+    const candidates = [];
+    for (let i = 0; i < mySkills.length; i++) {
+      const item = mySkills[i];
+      const id = item.skill.id;
+
+      if (id === 1) {
+        if (opponentProtected) {
+          continue;
+        }
+        const target = this.pickAIThrowTarget(opponentPieces);
+        if (target) {
+          candidates.push({
+            ...item,
+            weight: 4,
+            extraTargetInfo: { target }
+          });
+        }
+      } else if (id === 2) {
+        const hasRemovedSelf = (this.removedPieces || []).some((piece) => piece.player === 2);
+        if (hasRemovedSelf) {
+          candidates.push({ ...item, weight: 3 });
+        }
+      } else if (id === 3) {
+        if (opponentProtected) {
+          continue;
+        }
+        if (opponentPieces.length > 0) {
+          candidates.push({ ...item, weight: 3.5 });
+        }
+      } else if (id === 4) {
+        candidates.push({ ...item, weight: 3.2 });
+      } else if (id === 5) {
+        candidates.push({ ...item, weight: 4 });
+      } else if (id === 6) {
+        if ((this.boardHistory || []).length > 0) {
+          candidates.push({ ...item, weight: 2.2 });
+        }
+      } else if (id === 7) {
+        candidates.push({ ...item, weight: 1.5 });
+      } else if (id === 8) {
+        if (this.data.moveCount >= 12) {
+          candidates.push({ ...item, weight: 0.8 });
+        }
+      }
+    }
+
+    if (candidates.length === 0) return false;
+
+    // 教练策略：优先展示没展示过的技能，避免连续复读同一个技能
+    const enriched = candidates.map((item) => {
+      const usage = this.aiCoachSkillUsage[item.skill.id] || 0;
+      let weight = item.weight;
+
+      if (usage === 0) weight += 2.5;
+      else if (usage === 1) weight += 1.2;
+      else weight += 0.3;
+
+      if (this.aiCoachLastSkillId === item.skill.id) {
+        weight *= 0.35;
+      }
+
+      // 电脑领先较多时，降低强压制技能频率，给玩家练习空间
+      if (leadGap >= 3 && (item.skill.id === 1 || item.skill.id === 3 || item.skill.id === 8)) {
+        weight *= 0.45;
+      }
+
+      // 力拔山兮仅在后期偶尔演示，避免频繁重置破坏体验
+      if (item.skill.id === 8) {
+        weight *= currentRound >= 10 ? 1 : 0.2;
+      }
+
+      return { ...item, weight: Math.max(0.1, weight) };
+    });
+
+    let useChance = 0.45;
+    if (currentRound >= 4) useChance += 0.1;
+    if (currentRound >= 8) useChance += 0.08;
+    if (this.playerSkillUseCount <= 2) useChance += 0.12;
+    if (leadGap >= 3) useChance -= 0.12;
+    useChance = Math.max(0.3, Math.min(0.78, useChance));
+
+    if (Math.random() > useChance) return false;
+
+    const selected = this.pickByWeight(enriched);
+    this.executeSkill(selected.index, selected.skill, selected.extraTargetInfo || null);
+
+    return true;
   },
 
   // === 技能 ===
   handleSkillClick(e) {
     if (this.data.isGameOver) return;
     if (this.data.gameMode === 'ai' && this.data.currentPlayer !== 1) return;
+
+    if (this.turnSkillUsed) {
+      wx.showToast({ title: '本回合已使用技能', icon: 'none' });
+      return;
+    }
     
     // 如果已经处于选中技能状态，再次点击取消
     if (this.data.pendingSkill) {
@@ -310,6 +507,11 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
     let pObj = this.getSkillInfoFromEvent(e);
     if(!pObj) return;
     let { index, skill } = pObj;
+
+    if (skill.usedUp) {
+      wx.showToast({ title: '该技能本局已使用', icon: 'none' });
+      return;
+    }
 
     if(skill.cooldown > 0) {
         wx.showToast({ title: '技能冷却中', icon: 'none' });
@@ -345,6 +547,11 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
   executeSkill(index, skill, extraTargetInfo) {
     if(!skillConfig.useSkill) return;
 
+    if (skill.usedUp) {
+      wx.showToast({ title: '该技能本局已使用', icon: 'none' });
+      return;
+    }
+
     let extraContext = { history: this.boardHistory, removedPieces: this.removedPieces, playerEffects: this.playerEffects };
     if (extraTargetInfo) { extraContext = Object.assign(extraContext, extraTargetInfo); }
 
@@ -357,6 +564,8 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
     }
 
     if(result.success) {
+      const skillOwner = this.data.currentPlayer;
+        this.turnSkillUsed = true;
         // 如果返回了清理后的历史记录（如时光倒流），则同步回去
         if (result.newHistory) {
             this.boardHistory = result.newHistory;
@@ -382,12 +591,26 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
         for(let p = 0; p < newSkillPages.length; p++) {
             for(let s = 0; s < newSkillPages[p].length; s++) {
                 if (gIndex === index) {
-                    newSkillPages[p][s].cooldown = skill.maxCooldown;
+              newSkillPages[p][s].cooldown = skill.maxCooldown;
+              if (skill.id === 7 || skill.id === 8) {
+                newSkillPages[p][s].usedUp = true;
+              }
                 }
                 gIndex++;
             }
         }
         this.playerSkillPages[this.data.currentPlayer] = newSkillPages;
+
+        if (skillOwner === 1) {
+          this.playerSkillUseCount = (this.playerSkillUseCount || 0) + 1;
+        }
+        if (skillOwner === 2) {
+          this.aiCoachSkillUsage[skill.id] = (this.aiCoachSkillUsage[skill.id] || 0) + 1;
+          this.aiCoachLastSkillId = skill.id;
+          this.aiCoachLastSkillRound = Math.max(1, Math.ceil(this.data.moveCount / 2));
+        }
+
+        this.pushSkillHistoryRecord(skillOwner, skill.name);
         
         this.setData({ 
             board: result.newBoard, // 技能改变了棋盘
@@ -395,20 +618,23 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
         });
         this.drawBoard();
 
-        // 附带胜负判断(某些破坏技能可能直接赢了)
-        // 如果没赢，且此技能不需要将回合连续留给自己（比如时光倒流/或者待确定的技能），将回合让给AI
+        // 技能成功后默认结束回合；时光倒流为例外（保留回合重新落子）
         if (!result.skipTurn) {
           let nextPlayer = ruleConfig.switchPlayer ? ruleConfig.switchPlayer(this.data.currentPlayer) : (this.data.currentPlayer === 1 ? 2 : 1);
-            this.setData({
-              currentPlayer: nextPlayer,
-              skillPages: this.getSkillPagesByPlayer(nextPlayer)
-            });
+          this.setData({
+            currentPlayer: nextPlayer,
+            skillPages: this.getSkillPagesByPlayer(nextPlayer)
+          });
+          this.turnSkillUsed = false;
           if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
             setTimeout(() => { this.processAITurn(); }, 500);
           }
         }
 
-        wx.showToast({ title: `使用了 ${skill.name}`, icon: 'success' });
+        const skillToastTitle = (this.data.gameMode === 'ai' && skillOwner === 2)
+          ? `电脑对手用了${skill.name}`
+          : `使用了 ${skill.name}`;
+        wx.showToast({ title: result.msg || skillToastTitle, icon: 'none' });
     } else if (result.msg) {
         wx.showToast({ title: result.msg, icon: 'none' });
     }
@@ -458,7 +684,8 @@ animatePiece() {
     let newSkillPages = JSON.parse(JSON.stringify(this.getSkillPagesByPlayer(player)));
     for(let p = 0; p < newSkillPages.length; p++) {
         for(let s = 0; s < newSkillPages[p].length; s++) {
-            if(newSkillPages[p][s].cooldown > 0) newSkillPages[p][s].cooldown--;
+        if(newSkillPages[p][s].usedUp) continue;
+        if(newSkillPages[p][s].cooldown > 0) newSkillPages[p][s].cooldown--;
         }
     }
     this.playerSkillPages[player] = newSkillPages;
@@ -489,7 +716,7 @@ animatePiece() {
       const victory = winner === 1;
       const aiVictoryLines = [
         '恭喜，五子棋大师！继续保持！',
-        '这波布局很稳，AI被你拿捏了！',
+        '这波布局很稳，电脑对手被你拿捏了！',
         '攻守节奏完美，漂亮拿下这一局！',
         '关键一手封杀全局，赢得干脆利落！',
         '你今天手感火热，胜利实至名归！'
@@ -498,7 +725,7 @@ animatePiece() {
         '别灰心，下一局一定行！',
         '这局差一点点，下一盘就能翻盘！',
         '一子之失，来日可追。',
-        'AI抓住了破绽，再来一局复仇！',
+        '电脑对手抓住了破绽，再来一局复仇！',
         '思路已经对了，下一把就会更顺！'
       ];
       return {
@@ -507,7 +734,7 @@ animatePiece() {
         settlementTitleCn: victory ? '你赢了！' : '你输了。',
         settlementMessage: this.getRandomLine(victory ? aiVictoryLines : aiDefeatLines),
         settlementThirdLabel: victory ? '评价' : '对手',
-        settlementThirdValue: victory ? aiRating : '阿尔法喵 (AI)',
+        settlementThirdValue: victory ? aiRating : '阿尔法喵 (电脑对手)',
         settlementDurationText: durationText,
         settlementRoundText: roundText
       };
@@ -582,6 +809,40 @@ animatePiece() {
     wx.reLaunch({
       url: '/pages/index/index'
     });
+  },
+
+  handleAISkillToggle(e) {
+    const enabled = !!e.detail.value;
+    this.setData({ aiSkillEnabled: enabled });
+    wx.showToast({
+      title: enabled ? '已开启电脑技能' : '已关闭电脑技能',
+      icon: 'none'
+    });
+  },
+
+  toggleSkillHistoryPanel() {
+    this.setData({ showSkillHistoryPanel: !this.data.showSkillHistoryPanel });
+  },
+
+  pushSkillHistoryRecord(skillOwner, skillName) {
+    const round = Math.max(1, Math.ceil(this.data.moveCount / 2));
+    let actor = '玩家';
+
+    if (this.data.gameMode === 'double') {
+      actor = skillOwner === 1 ? '玩家1' : '玩家2';
+    } else {
+      actor = skillOwner === 1 ? '玩家' : '电脑';
+    }
+
+    const record = {
+      id: `${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+      text: `R${round} ${actor} · ${skillName}`
+    };
+
+    const next = [...(this.data.skillHistory || []), record];
+    const maxRecords = 18;
+    const trimmed = next.length > maxRecords ? next.slice(next.length - maxRecords) : next;
+    this.setData({ skillHistory: trimmed });
   },
 
   handleRestart() {

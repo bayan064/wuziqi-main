@@ -10,9 +10,34 @@ page {
   align-items: center;
   padding: 30rpx 20rpx;
   box-sizing: border-box;
+  position: relative;
 
   opacity: 0;
   transform: translateX(100%);
+}
+
+.ai-corner-toggle {
+  position: fixed;
+  right: 24rpx;
+  top: 84rpx;
+  z-index: 20;
+  padding: 2rpx 8rpx;
+  border-radius: 22rpx;
+  background: #f7ebd5;
+  display: flex;
+  align-items: center;
+  gap: 2rpx;
+}
+
+.ai-corner-label {
+  font-size: 20rpx;
+  color: #8b4513;
+  font-weight: bold;
+}
+
+.ai-corner-switch {
+  transform: scale(0.68);
+  transform-origin: right center;
 }
 
 /* 激活后整体滑入（同步） */
@@ -216,6 +241,82 @@ page {
 .restart-btn:active {
   transform: translateY(10rpx);
   box-shadow: 0 0 0 #8b4513;
+}
+
+.skill-history-wrap {
+  position: fixed;
+  left: 40rpx;
+  bottom: 80rpx;
+  z-index: 9998;
+}
+
+.skill-history-icon {
+  width: 90rpx;
+  height: 90rpx;
+  background-color: #ff9800;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 6rpx solid #ffffff;
+  box-shadow: 0 8rpx 15rpx rgba(0, 0, 0, 0.2);
+}
+
+.skill-history-icon:active {
+  transform: scale(0.9) translateY(4rpx);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.2);
+}
+
+.skill-history-icon-text {
+  color: #fff;
+  font-size: 46rpx;
+  font-weight: 900;
+  text-shadow: 2rpx 2rpx 0 #8b4513;
+}
+
+.skill-history-panel {
+  position: absolute;
+  left: 0;
+  bottom: 112rpx;
+  width: 320rpx;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-radius: 20rpx;
+  border: 4rpx solid #8b4513;
+  background: rgba(255, 248, 234, 0.95);
+  box-shadow: 0 10rpx 16rpx rgba(0, 0, 0, 0.16);
+  transform: translateY(12rpx);
+  transition: all 0.22s ease;
+  pointer-events: none;
+}
+
+.skill-history-panel.open {
+  height: 290rpx;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.skill-history-list {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 12rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8rpx;
+}
+
+.skill-history-item {
+  font-size: 22rpx;
+  color: #5a3316;
+  line-height: 1.35;
+  padding: 8rpx 10rpx;
+  border-radius: 12rpx;
+  background: rgba(255, 215, 160, 0.5);
+  border: 2rpx solid rgba(139, 69, 19, 0.2);
 }
 
 .settlement-mask {

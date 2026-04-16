@@ -1,4 +1,9 @@
 <view class="container {{ready ? 'active' : ''}}">
+  <view wx:if="{{gameMode === 'ai'}}" class="ai-corner-toggle">
+    <text class="ai-corner-label">电脑技能</text>
+    <switch class="ai-corner-switch" color="#ff7f50" checked="{{aiSkillEnabled}}" bindchange="handleAISkillToggle"></switch>
+  </view>
+
   <!-- 顶部状态栏 -->
   <view class="header">
     <text class="title">技能五子棋</text>
@@ -11,7 +16,7 @@
         </view>
         <view class="turn-card white-card {{currentPlayer === 2 ? 'active' : ''}}">
           <view class="piece-dot white-dot"></view>
-          <text class="turn-main">{{gameMode === 'double' ? '○ 白棋 (玩家2)' : '○ 白棋 (AI)'}}</text>
+          <text class="turn-main">{{gameMode === 'double' ? '○ 白棋 (玩家2)' : '○ 白棋 (电脑对手)'}}</text>
         </view>
       </view>
     </view>
@@ -28,9 +33,9 @@
       <swiper-item>
         <view class="skills-area">
           <block wx:for="{{page}}" wx:key="id" wx:for-item="item" wx:for-index="itemIndex">
-            <view class="skill-btn {{item.cooldown > 0 ? 'disabled' : ''}}" bindtap="handleSkillClick" data-index="{{pageIndex * 3 + itemIndex}}">
+            <view class="skill-btn {{item.cooldown > 0 || item.usedUp ? 'disabled' : ''}}" bindtap="handleSkillClick" data-index="{{pageIndex * 3 + itemIndex}}">
               <text class="skill-name">{{item.name}}</text>
-              <text class="skill-status">{{item.cooldown > 0 ? '冷却: ' + item.cooldown : '可用'}}</text>
+              <text class="skill-status">{{item.usedUp ? '本局已用' : (item.cooldown > 0 ? '冷却: ' + item.cooldown : '可用')}}</text>
             </view>
           </block>
         </view>
@@ -46,6 +51,21 @@
 
 <!-- 技能说明手册（圆形图标） -->
 <skill-manual></skill-manual>
+
+<!-- 技能历史（左下角，对称图标） -->
+<view class="skill-history-wrap">
+  <view class="skill-history-panel {{showSkillHistoryPanel ? 'open' : ''}}">
+    <view class="skill-history-list">
+      <block wx:for="{{skillHistory}}" wx:key="id" wx:for-item="item">
+        <view class="skill-history-item">{{item.text}}</view>
+      </block>
+    </view>
+  </view>
+
+  <view class="skill-history-icon" bindtap="toggleSkillHistoryPanel">
+    <text class="skill-history-icon-text">{{showSkillHistoryPanel ? '×' : '≡'}}</text>
+  </view>
+</view>
 
 <!-- 对局结算弹层 -->
 <view wx:if="{{settlementVisible}}" class="settlement-mask">
