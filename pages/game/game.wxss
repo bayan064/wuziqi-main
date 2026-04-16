@@ -218,20 +218,6 @@ page {
   box-shadow: 0 0 0 #8b4513;
 }
 
-.board-wrapper {
-  width: 600rpx;
-  height: 600rpx;
-  position: relative;
-}
-
-.board-wrapper .board-canvas {
-  width: 100%;
-  height: 100%;
-  background-color: #e8d5a3;
-  border-radius: 10rpx;
-  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.1);
-}
-
 .settlement-mask {
   position: fixed;
   left: 0;

@@ -42,24 +42,6 @@
   <view class="control-area">
     <button class="restart-btn" type="primary" bindtap="handleRestart">重新开始</button>
   </view>
-
-  <canvas 
-  id="boardCanvas" 
-  type="2d" 
-  class="board-canvas"
-  bindtap="handleBoardClick"
-  disable-scroll="true"
-></canvas>
-
-
-<!-- 棋盘区域 - 用 view 包裹 canvas -->
-<view class="board-wrapper" bindtap="handleBoardClick">
-  <canvas 
-    id="boardCanvas" 
-    type="2d" 
-    class="board-canvas"
-  ></canvas>
-</view>
 </view>
 
 <!-- 技能说明手册（圆形图标） -->
