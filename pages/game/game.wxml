@@ -3,7 +3,17 @@
   <view class="header">
     <text class="title">技能五子棋</text>
     <view class="turn-indicator">
-      当前回合：<text class="{{currentPlayer === 1 ? 'black-text' : 'white-text'}}">{{currentPlayer === 1 ? '● 黑棋 (玩家)' : '○ 白棋 (AI)'}}</text>
+      <text class="turn-label">当前回合：</text>
+      <view class="turn-cards">
+        <view class="turn-card black-card {{currentPlayer === 1 ? 'active' : ''}}">
+          <view class="piece-dot black-dot"></view>
+          <text class="turn-main">{{gameMode === 'double' ? '● 黑棋 (玩家1)' : '● 黑棋 (玩家)'}}</text>
+        </view>
+        <view class="turn-card white-card {{currentPlayer === 2 ? 'active' : ''}}">
+          <view class="piece-dot white-dot"></view>
+          <text class="turn-main">{{gameMode === 'double' ? '○ 白棋 (玩家2)' : '○ 白棋 (AI)'}}</text>
+        </view>
+      </view>
     </view>
   </view>
 

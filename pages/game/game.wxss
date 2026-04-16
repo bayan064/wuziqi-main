@@ -41,13 +41,81 @@ page {
 
 .turn-indicator {
   margin-top: 15rpx;
-  font-size: 32rpx;
-  background-color: #fff;
-  border: 4rpx solid #8b4513;
-  padding: 8rpx 30rpx;
-  border-radius: 30rpx;
-  box-shadow: 0 6rpx 0 #ccc;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.turn-label {
+  font-size: 28rpx;
+  color: #8b4513;
   font-weight: bold;
+  margin-bottom: 12rpx;
+}
+
+.turn-cards {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.turn-card {
+  width: 44%;
+  min-height: 96rpx;
+  border-radius: 28rpx;
+  border: 4rpx solid #8b4513;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.turn-card + .turn-card {
+  margin-left: 24rpx;
+}
+
+.turn-card.active {
+  transform: translateY(-2rpx);
+}
+
+.black-card {
+  background: #6f4a37;
+  color: #fff8ea;
+  box-shadow: 0 8rpx 0 #4f3326;
+}
+
+.white-card {
+  background: #f7ebd5;
+  color: #8b4513;
+  box-shadow: 0 8rpx 0 #d2b48c;
+}
+
+.turn-card:not(.active) {
+  opacity: 0.55;
+}
+
+.piece-dot {
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  margin-right: 14rpx;
+}
+
+.black-dot {
+  background: #222;
+  box-shadow: inset 0 2rpx 4rpx rgba(255, 255, 255, 0.2), 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+}
+
+.white-dot {
+  background: #fff;
+  box-shadow: inset 0 2rpx 4rpx rgba(0, 0, 0, 0.12), 0 2rpx 4rpx rgba(0, 0, 0, 0.16);
+}
+
+.turn-main {
+  font-size: 24rpx;
 }
 
 .black-text {
