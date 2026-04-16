@@ -15,6 +15,8 @@ Page({
     canvasSize: 600,
     gameMode: 'ai',
     lastAIMove: null,
+    lastBlackMove: null,
+    lastWhiteMove: null,
     animatingMove: null ,
     // ✅ 新增：控制动画同步
     ready: false,
@@ -60,6 +62,8 @@ Page({
       skills: newSkills,
       skillPages: skillPages,
       lastAIMove: null,
+      lastBlackMove: null,
+      lastWhiteMove: null,
       animatingMove: null,
       pendingSkill: null
     });
@@ -177,15 +181,39 @@ handleBoardClick(e) {
 
     board[row][col] = player;
 
+    let nextHighlightMove = this.data.lastAIMove;
+    let nextLastBlackMove = this.data.lastBlackMove;
+    let nextLastWhiteMove = this.data.lastWhiteMove;
+
+    if (player === 1) {
+      nextLastBlackMove = { row, col };
+    } else {
+      nextLastWhiteMove = { row, col };
+    }
+
+    if (this.data.gameMode === 'ai' && player === 2) {
+      nextHighlightMove = { row, col };
+    }
+    if (this.data.gameMode === 'double') {
+      nextHighlightMove = player === 1 ? this.data.lastWhiteMove : this.data.lastBlackMove;
+    }
+
     // ✅ AI 落子 → 启动动画
     if (player === 2) {
       this.setData({
         animatingMove: { row, col, progress: 0 },
-        lastAIMove: { row, col }
+        lastAIMove: nextHighlightMove,
+        lastBlackMove: nextLastBlackMove,
+        lastWhiteMove: nextLastWhiteMove
       });
       this.animatePiece(); // 启动动画
     } else {
-      this.setData({ board });
+      this.setData({
+        board,
+        lastAIMove: nextHighlightMove,
+        lastBlackMove: nextLastBlackMove,
+        lastWhiteMove: nextLastWhiteMove
+      });
       this.drawBoard();
     }
 
