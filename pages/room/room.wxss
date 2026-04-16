@@ -1,40 +1,36 @@
 /* pages/room/room.wxss */
 page {
-  background-color: #fdf6e3;
+  background: linear-gradient(180deg, #fdf6e3 0%, #f7e6c4 100%);
 }
 
-/* 初始隐藏 */
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  padding: 30rpx 20rpx;
+  padding: 30rpx 24rpx 40rpx;
   box-sizing: border-box;
-
   opacity: 0;
   transform: translateX(100%);
 }
 
-/* 激活后整体滑入 */
 .container.active {
   opacity: 1;
   transform: translateX(0);
   transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* 头部 */
 .header {
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 60rpx;
+  margin-bottom: 30rpx;
   padding: 0 20rpx;
 }
 
 .back-btn {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: bold;
   color: #8b4513;
   background-color: #fff;
@@ -51,11 +47,11 @@ page {
 }
 
 .title {
-  font-size: 44rpx;
+  font-size: 40rpx;
   font-weight: 900;
-  color: #ff7f50;
+  color: #ff8b42;
   -webkit-text-stroke: 2rpx #8b4513;
-  text-shadow: 4rpx 4rpx 0 #8b4513;
+  text-shadow: 3rpx 3rpx 0 #8b4513;
   letter-spacing: 2rpx;
 }
 
@@ -63,60 +59,82 @@ page {
   width: 100rpx;
 }
 
-/* 内容区域 */
-.content {
-  flex: 1;
+.profile-card,
+.stats-card,
+.record-card {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 40rpx;
-  padding: 0 30rpx;
+  background-color: #fff;
+  border-radius: 30rpx;
+  padding: 32rpx;
+  border: 6rpx solid #8b4513;
+  box-shadow: 0 12rpx 0 #d2a679;
+  margin-bottom: 24rpx;
   box-sizing: border-box;
 }
 
-/* 卡片样式 - 卡通风格 */
-.card {
-  background-color: #fff;
-  border-radius: 30rpx;
-  padding: 40rpx 30rpx;
-  border: 6rpx solid #8b4513;
-  box-shadow: 0 12rpx 0 #d2a679;
-  transition: all 0.1s;
-  text-align: center;
+.profile-card {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
 }
 
-.card:active {
-  transform: translateY(6rpx);
-  box-shadow: 0 6rpx 0 #d2a679;
+.avatar-btn {
+  width: 148rpx !important;
+  height: 148rpx !important;
+  min-width: 148rpx;
+  min-height: 148rpx;
+  padding: 0 !important;
+  border: 4rpx solid #8b4513;
+  border-radius: 999rpx !important;
+  overflow: hidden;
+  background: #f3f3f3;
+  box-shadow: 0 8rpx 0 #d2a679;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 148rpx;
+  flex: 0 0 148rpx;
 }
 
-/* 加入卡片内部按钮不需要整体缩放 */
-.join-card:active {
-  transform: none;
+.avatar-btn::after {
+  border: none;
+  border-radius: 999rpx;
 }
 
-.card-icon {
-  font-size: 80rpx;
-  margin-bottom: 20rpx;
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
 }
 
-.card-title {
-  font-size: 38rpx;
-  font-weight: 900;
-  color: #ffaa00;
-  -webkit-text-stroke: 1.5rpx #8b4513;
-  margin-bottom: 15rpx;
+.placeholder-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 72rpx;
+  color: #8b4513;
 }
 
-.card-desc {
-  font-size: 26rpx;
-  color: #666;
-  font-weight: bold;
-  margin-bottom: 30rpx;
+.avatar-tip {
+  margin-top: 14rpx;
+  color: #7a6d5a;
+  font-size: 24rpx;
 }
 
-/* 输入框样式 */
-.room-input {
+.nickname-row {
+  width: 100%;
+  margin-top: 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.nickname-input {
+  flex: 1;
   width: 100%;
   height: 80rpx;
   background-color: #fdf6e3;
@@ -124,55 +142,131 @@ page {
   border-radius: 50rpx;
   padding: 0 30rpx;
   font-size: 32rpx;
-  text-align: center;
+  text-align: left;
   font-weight: bold;
   color: #333;
-  margin-bottom: 25rpx;
   box-sizing: border-box;
 }
 
-/* 加入按钮 */
-.join-btn {
-  width: 100% !important;
-  height: 80rpx;
+.save-btn {
+  width: 170rpx;
+  height: 80rpx !important;
+  min-height: 80rpx;
+  max-height: 80rpx;
   line-height: 80rpx;
-  vertical-align: middle;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
-  color: white !important;
-  font-size: 32rpx;
+  padding: 0 !important;
+  margin: 0;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #ff9f43 0%, #ff6f3c 100%);
+  color: #fff;
+  font-size: 30rpx;
   font-weight: bold;
   border-radius: 50rpx;
   border: 4rpx solid #8b4513;
-  box-shadow: 0 8rpx 0 #2c7da0;
-  transition: all 0.1s;
-  margin: 0 auto; 
-  display: block; 
+  box-shadow: 0 8rpx 0 #d27534;
 }
 
-.join-btn:active {
+.save-btn:active {
   transform: translateY(8rpx);
-  box-shadow: 0 0 0 #2c7da0;
+  box-shadow: 0 0 0 #d27534;
 }
 
-/* 徽章 */
-.badge {
-  display: inline-block;
-  background-color: #ffaa00;
-  color: white;
+.stats-card {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat-item {
+  width: 31%;
+  background: #fff5df;
+  border-radius: 20rpx;
+  border: 3rpx solid #d8b784;
+  padding: 18rpx 10rpx;
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 42rpx;
+  font-weight: 900;
+  color: #8b4513;
+}
+
+.stat-label {
+  display: block;
+  margin-top: 8rpx;
   font-size: 24rpx;
-  font-weight: bold;
-  padding: 8rpx 20rpx;
-  border-radius: 40rpx;
-  margin-top: 20rpx;
+  color: #6f6250;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.record-title {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: #8b4513;
+}
+
+.clear-btn {
+  background: #ffe2c2;
+  color: #8b4513;
   border: 2rpx solid #8b4513;
+  border-radius: 24rpx;
 }
 
-/* 创建房间按钮特殊颜色 */
-.create-card .card-title {
-  color: #f5576c;
+.record-list {
+  max-height: 560rpx;
 }
 
-/* 随机匹配卡片半透明 */
-.random-card {
-  opacity: 0.8;
+.record-item {
+  background: #fff7e8;
+  border: 2rpx solid #e4cc9d;
+  border-radius: 20rpx;
+  padding: 18rpx;
+  margin-bottom: 14rpx;
+}
+
+.record-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.record-mode {
+  font-size: 28rpx;
+  color: #5f5240;
+  font-weight: 700;
+}
+
+.record-result {
+  font-size: 26rpx;
+  font-weight: 900;
+}
+
+.record-result.win {
+  color: #1f9d55;
+}
+
+.record-result.lose {
+  color: #d64545;
+}
+
+.record-bottom {
+  margin-top: 10rpx;
+  display: flex;
+  justify-content: space-between;
+  font-size: 22rpx;
+  color: #7a6d5a;
+}
+
+.empty-record {
+  text-align: center;
+  color: #8f8473;
+  padding: 40rpx 0 20rpx;
+  font-size: 26rpx;
 }

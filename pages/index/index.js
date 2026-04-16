@@ -14,8 +14,8 @@ Page({
     })
   },
 
-  // 【新增】在线对战入口
-  startOnlineGame() {
+  // 个人中心入口
+  openProfileCenter() {
     wx.navigateTo({
       url: '/pages/room/room',
     })

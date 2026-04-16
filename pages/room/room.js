@@ -1,91 +1,84 @@
 // pages/room/room.js
+const PROFILE_NAME_KEY = 'profileNickname'
+const PROFILE_AVATAR_KEY = 'profileAvatar'
+const BATTLE_RECORDS_KEY = 'battleRecords'
+
 Page({
   data: {
-    roomId: '',        // 房间号
-    inputRoomId: '',   // 输入的房间号
-    active: true
+    active: true,
+    nickname: '五子棋玩家',
+    avatarUrl: '',
+    recordList: [],
+    totalGames: 0,
+    winGames: 0,
+    winRateText: '0%'
   },
 
   onLoad() {
-    // 页面加载
-    console.log('在线对战页面加载')
+    this.loadProfile()
+    this.loadRecords()
   },
 
-  // 创建房间
-  createRoom() {
-    // 生成6位随机房间号
-    const roomId = Math.floor(100000 + Math.random() * 900000).toString()
-    
-    this.setData({ roomId })
-    
-    wx.showModal({
-      title: '房间创建成功',
-      content: `房间号：${roomId}\n请将房间号分享给好友`,
-      confirmText: '复制房间号',
-      success: (res) => {
-        if (res.confirm) {
-          wx.setClipboardData({
-            data: roomId,
-            success: () => {
-              wx.showToast({ title: '房间号已复制', icon: 'success' })
-            }
-          })
-        }
-      }
+  onShow() {
+    // 返回个人中心时刷新，确保能看到最新对局记录
+    this.loadRecords()
+  },
+
+  loadProfile() {
+    const nickname = wx.getStorageSync(PROFILE_NAME_KEY) || '五子棋玩家'
+    const avatarUrl = wx.getStorageSync(PROFILE_AVATAR_KEY) || ''
+    this.setData({ nickname, avatarUrl })
+  },
+
+  loadRecords() {
+    const records = wx.getStorageSync(BATTLE_RECORDS_KEY) || []
+    const totalGames = records.length
+    const winGames = records.filter((item) => item.result === '胜利').length
+    const winRate = totalGames > 0 ? Math.round((winGames / totalGames) * 100) : 0
+
+    this.setData({
+      recordList: records,
+      totalGames,
+      winGames,
+      winRateText: `${winRate}%`
     })
-    
-    // 跳转到等待页面（先弹窗，后续可以再加跳转）
-    // wx.navigateTo({
-    //   url: `/pages/wait/wait?roomId=${roomId}&isCreator=true`
-    // })
   },
 
-  // 加入房间
-  joinRoom() {
-    const roomId = this.data.inputRoomId.trim()
-    
-    if (!roomId) {
-      wx.showToast({ title: '请输入房间号', icon: 'none' })
+  onChooseAvatar(e) {
+    const avatarUrl = e.detail.avatarUrl || ''
+    if (!avatarUrl) return
+    this.setData({ avatarUrl })
+    wx.setStorageSync(PROFILE_AVATAR_KEY, avatarUrl)
+  },
+
+  onNicknameInput(e) {
+    this.setData({ nickname: e.detail.value })
+  },
+
+  saveNickname() {
+    const nickname = (this.data.nickname || '').trim()
+    if (!nickname) {
+      wx.showToast({ title: '昵称不能为空', icon: 'none' })
       return
     }
-    
-    if (roomId.length !== 6) {
-      wx.showToast({ title: '房间号应为6位数字', icon: 'none' })
-      return
-    }
-    
+    wx.setStorageSync(PROFILE_NAME_KEY, nickname)
+    wx.showToast({ title: '昵称已保存', icon: 'success' })
+  },
+
+  clearRecords() {
+    if (this.data.totalGames === 0) return
     wx.showModal({
-      title: '加入房间',
-      content: `正在加入房间：${roomId}`,
-      confirmText: '确定',
+      title: '清空记录',
+      content: '确定清空所有对局记录吗？',
       success: (res) => {
-        if (res.confirm) {
-          // TODO: 后续接入后端验证房间是否存在
-          wx.showToast({ title: '功能开发中', icon: 'none' })
-          // wx.navigateTo({
-          //   url: `/pages/wait/wait?roomId=${roomId}&isCreator=false`
-          // })
-        }
+        if (!res.confirm) return
+        wx.setStorageSync(BATTLE_RECORDS_KEY, [])
+        this.loadRecords()
+        wx.showToast({ title: '已清空', icon: 'success' })
       }
     })
   },
 
-  // 随机匹配（占位，逻辑先不做）
-  randomMatch() {
-    wx.showModal({
-      title: '随机匹配',
-      content: '功能开发中，敬请期待',
-      showCancel: false,
-      confirmText: '知道了'
-    })
-  },
-
-  // 输入房间号
-  onRoomIdInput(e) {
-    this.setData({ inputRoomId: e.detail.value })
-  },
-
-  // 返回首页
   goBack() {
     wx.navigateBack()
   }
