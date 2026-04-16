@@ -3,12 +3,22 @@
   <view class="header">
     <text class="title">技能五子棋</text>
     <view class="turn-indicator">
-      当前回合：<text class="{{currentPlayer === 1 ? 'black-text' : 'white-text'}}">{{currentPlayer === 1 ? '● 黑棋 (玩家)' : '○ 白棋 (AI)'}}</text>
+      <text class="turn-label">当前回合：</text>
+      <view class="turn-cards">
+        <view class="turn-card black-card {{currentPlayer === 1 ? 'active' : ''}}">
+          <view class="piece-dot black-dot"></view>
+          <text class="turn-main">{{gameMode === 'double' ? '● 黑棋 (玩家1)' : '● 黑棋 (玩家)'}}</text>
+        </view>
+        <view class="turn-card white-card {{currentPlayer === 2 ? 'active' : ''}}">
+          <view class="piece-dot white-dot"></view>
+          <text class="turn-main">{{gameMode === 'double' ? '○ 白棋 (玩家2)' : '○ 白棋 (AI)'}}</text>
+        </view>
+      </view>
     </view>
   </view>
 
   <!-- 棋盘区域 (A同学负责的Canvas绘制) -->
-  <view class="board-container">
+  <view wx:if="{{!settlementVisible}}" class="board-container">
     <canvas type="2d" id="boardCanvas" class="board-canvas" bindtouchstart="handleBoardClick"></canvas>
   </view>
 
@@ -54,3 +64,31 @@
 
 <!-- 技能说明手册（圆形图标） -->
 <skill-manual></skill-manual>
+
+<!-- 对局结算弹层 -->
+<view wx:if="{{settlementVisible}}" class="settlement-mask">
+  <view class="settlement-panel {{settlementType === 'victory' ? 'victory' : 'defeat'}}">
+    <view class="floating floating-star">★</view>
+    <view class="floating floating-leaf">✦</view>
+
+    <view class="settlement-title-wrap">
+      <text class="settlement-title-en">{{settlementTitleEn}}</text>
+      <text class="settlement-title-cn">{{settlementTitleCn}}</text>
+    </view>
+
+    <view class="settlement-stats">
+      <text class="settlement-line">对局用时：{{settlementDurationText}}</text>
+      <text class="settlement-line">回合：{{settlementRoundText}}</text>
+      <text class="settlement-line">{{settlementThirdLabel}}：{{settlementThirdValue}}</text>
+    </view>
+
+    <view class="settlement-message-box">
+      <text class="settlement-message">{{settlementMessage}}</text>
+    </view>
+
+    <view class="settlement-actions">
+      <button class="settlement-btn" bindtap="handleSettlementRestart">再来一局</button>
+      <button class="settlement-btn" bindtap="handleBackToMenu">主菜单</button>
+    </view>
+  </view>
+</view>
