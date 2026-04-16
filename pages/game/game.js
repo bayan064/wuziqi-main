@@ -15,6 +15,8 @@ Page({
     canvasSize: 600,
     gameMode: 'ai',
     lastAIMove: null,
+    lastBlackMove: null,
+    lastWhiteMove: null,
     animatingMove: null ,
     // ✅ 新增：控制动画同步
     ready: false,
@@ -64,13 +66,21 @@ Page({
       skillPages.push(newSkills.slice(i, i + 3));
     }
 
+    // 黑白双方分别维护技能状态（冷却独立计算）
+    this.playerSkillPages = {
+      1: JSON.parse(JSON.stringify(skillPages)),
+      2: JSON.parse(JSON.stringify(skillPages))
+    };
+
     this.setData({
       board: newBoard,
       currentPlayer: 1,
       isGameOver: false,
       skills: newSkills,
-      skillPages: skillPages,
+      skillPages: this.playerSkillPages[1],
       lastAIMove: null,
+      lastBlackMove: null,
+      lastWhiteMove: null,
       animatingMove: null,
       pendingSkill: null,
       moveCount: 0,
@@ -82,6 +92,15 @@ Page({
     if (this._ctx) {
       this.drawBoard();
     }
+  },
+
+  getSkillPagesByPlayer(player) {
+    if (!this.playerSkillPages) return [];
+    return this.playerSkillPages[player] || [];
+  },
+
+  syncCurrentPlayerSkillPages(player) {
+    this.setData({ skillPages: this.getSkillPagesByPlayer(player) });
   },
 
   _createEmptyBoard() {
@@ -194,15 +213,39 @@ handleBoardClick(e) {
     const nextMoveCount = this.data.moveCount + 1;
     this.setData({ moveCount: nextMoveCount });
 
+    let nextHighlightMove = this.data.lastAIMove;
+    let nextLastBlackMove = this.data.lastBlackMove;
+    let nextLastWhiteMove = this.data.lastWhiteMove;
+
+    if (player === 1) {
+      nextLastBlackMove = { row, col };
+    } else {
+      nextLastWhiteMove = { row, col };
+    }
+
+    if (this.data.gameMode === 'ai' && player === 2) {
+      nextHighlightMove = { row, col };
+    }
+    if (this.data.gameMode === 'double') {
+      nextHighlightMove = player === 1 ? this.data.lastWhiteMove : this.data.lastBlackMove;
+    }
+
     // ✅ AI 落子 → 启动动画
     if (player === 2) {
       this.setData({
         animatingMove: { row, col, progress: 0 },
-        lastAIMove: { row, col }
+        lastAIMove: nextHighlightMove,
+        lastBlackMove: nextLastBlackMove,
+        lastWhiteMove: nextLastWhiteMove
       });
       this.animatePiece(); // 启动动画
     } else {
-      this.setData({ board });
+      this.setData({
+        board,
+        lastAIMove: nextHighlightMove,
+        lastBlackMove: nextLastBlackMove,
+        lastWhiteMove: nextLastWhiteMove
+      });
       this.drawBoard();
     }
 
@@ -212,8 +255,8 @@ handleBoardClick(e) {
       return;
     }
 
-    if (player === 1) {
-      this.updateSkillCooldowns();
+    if (player === 1 || this.data.gameMode === 'double') {
+      this.updateSkillCooldowns(player);
     }
 
     // 更新特效倒计时（减少自身身上挂着的所有buff/debuff的时间）
@@ -228,7 +271,10 @@ handleBoardClick(e) {
     // 切换玩家 (调用B同学的方法)
      // 切换玩家
   let nextPlayer = ruleConfig.switchPlayer ? ruleConfig.switchPlayer(this.data.currentPlayer) : (this.data.currentPlayer === 1 ? 2 : 1);
-  this.setData({ currentPlayer: nextPlayer });
+  this.setData({
+    currentPlayer: nextPlayer,
+    skillPages: this.getSkillPagesByPlayer(nextPlayer)
+  });
 
 // 【修改】人机模式且轮到AI时，才调用AI落子
 if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
@@ -251,7 +297,8 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
 
   // === 技能 ===
   handleSkillClick(e) {
-    if (this.data.isGameOver || this.data.currentPlayer !== 1) return;
+    if (this.data.isGameOver) return;
+    if (this.data.gameMode === 'ai' && this.data.currentPlayer !== 1) return;
     
     // 如果已经处于选中技能状态，再次点击取消
     if (this.data.pendingSkill) {
@@ -281,10 +328,11 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
 
   getSkillInfoFromEvent(e) {
     let index = e.currentTarget.dataset.index;
+    const currentSkillPages = this.getSkillPagesByPlayer(this.data.currentPlayer);
     // index是摊平后的index，在pages里找
     let globalIndex = 0;
     let targetSkill = null;
-    for(let page of this.data.skillPages) {
+    for(let page of currentSkillPages) {
         for(let s of page) {
             if(globalIndex === index) { targetSkill = s; break; }
             globalIndex++;
@@ -328,8 +376,8 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
             this.playerEffects[eff.target][eff.effect] = eff.duration;
         }
 
-        // 更新冷却，注意这里要更新 skillPages 里的对象
-        let newSkillPages = JSON.parse(JSON.stringify(this.data.skillPages));
+        // 更新当前玩家自己的技能冷却
+        let newSkillPages = JSON.parse(JSON.stringify(this.getSkillPagesByPlayer(this.data.currentPlayer)));
         let gIndex = 0;
         for(let p = 0; p < newSkillPages.length; p++) {
             for(let s = 0; s < newSkillPages[p].length; s++) {
@@ -339,19 +387,25 @@ if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
                 gIndex++;
             }
         }
+        this.playerSkillPages[this.data.currentPlayer] = newSkillPages;
         
         this.setData({ 
             board: result.newBoard, // 技能改变了棋盘
-            skillPages: newSkillPages 
+          skillPages: this.getSkillPagesByPlayer(this.data.currentPlayer)
         });
         this.drawBoard();
 
         // 附带胜负判断(某些破坏技能可能直接赢了)
         // 如果没赢，且此技能不需要将回合连续留给自己（比如时光倒流/或者待确定的技能），将回合让给AI
         if (!result.skipTurn) {
-            let nextPlayer = ruleConfig.switchPlayer ? ruleConfig.switchPlayer(this.data.currentPlayer) : 2;
-            this.setData({ currentPlayer: nextPlayer });
+          let nextPlayer = ruleConfig.switchPlayer ? ruleConfig.switchPlayer(this.data.currentPlayer) : (this.data.currentPlayer === 1 ? 2 : 1);
+            this.setData({
+              currentPlayer: nextPlayer,
+              skillPages: this.getSkillPagesByPlayer(nextPlayer)
+            });
+          if (this.data.gameMode === 'ai' && nextPlayer === 2 && !this.data.isGameOver) {
             setTimeout(() => { this.processAITurn(); }, 500);
+          }
         }
 
         wx.showToast({ title: `使用了 ${skill.name}`, icon: 'success' });
@@ -400,14 +454,17 @@ animatePiece() {
 
   animate();
 },
-  updateSkillCooldowns() {
-    let newSkillPages = JSON.parse(JSON.stringify(this.data.skillPages));
+  updateSkillCooldowns(player) {
+    let newSkillPages = JSON.parse(JSON.stringify(this.getSkillPagesByPlayer(player)));
     for(let p = 0; p < newSkillPages.length; p++) {
         for(let s = 0; s < newSkillPages[p].length; s++) {
             if(newSkillPages[p][s].cooldown > 0) newSkillPages[p][s].cooldown--;
         }
     }
-    this.setData({ skillPages: newSkillPages });
+    this.playerSkillPages[player] = newSkillPages;
+    if (this.data.currentPlayer === player) {
+      this.setData({ skillPages: newSkillPages });
+    }
   },
 
   // === 结束 / 重开 ===
